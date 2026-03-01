@@ -44,3 +44,5 @@ next-env.d.ts
 .agent
 .claude
 .opencode
+/plan
+/supabase
