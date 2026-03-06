@@ -164,3 +164,24 @@
   .band-bg-ok   { @apply bg-amber-50 border border-amber-200; }
   .band-bg-low  { @apply bg-red-50 border border-red-200; }
 }
+
+/* Speaking practice — audio waveform bars animation */
+@keyframes waveform {
+  0%, 100% { transform: scaleY(0.4); }
+  50%      { transform: scaleY(1); }
+}
+
+.animate-waveform {
+  animation: waveform ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* Slow pulse for the record button */
+@keyframes pulse-slow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50%      { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 1.5s ease-in-out infinite;
+}

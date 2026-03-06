@@ -2,3 +2,4 @@
 export * from './types'
 export * from './test-results'
 export * from './user-goals'
+export * from './speaking-sessions'

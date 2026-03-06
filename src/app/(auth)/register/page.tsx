@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   description: 'Create a free IELTS Diaries account to save test results, set goals, and track your progress.',
 }
 
+import { Suspense } from 'react'
+
 export default function RegisterPage() {
-  return <RegisterForm />
+  return (
+    <Suspense fallback={<div className="h-[400px] w-full animate-pulse rounded-xl bg-muted/40" />}>
+      <RegisterForm />
+    </Suspense>
+  )
 }

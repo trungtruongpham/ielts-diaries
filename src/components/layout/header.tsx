@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   Calculator, LayoutDashboard, LogOut,
-  Menu, X, Target, ClipboardList,
+  Menu, X, Target, ClipboardList, Mic,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -98,6 +98,12 @@ function UserMenu({ user, onLogout }: { user: User; onLogout: () => void }) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
+            <Link href="/dashboard/speaking" className="flex cursor-pointer items-center gap-2">
+              <Mic className="h-4 w-4 text-muted-foreground" />
+              Speaking History
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
             <Link href="/dashboard/goal" className="flex cursor-pointer items-center gap-2">
               <Target className="h-4 w-4 text-muted-foreground" />
               My Goal
@@ -148,6 +154,7 @@ export function Header() {
   // Only public nav items — Dashboard lives in the user avatar dropdown
   const navLinks = [
     { href: '/calculator', label: 'Calculator', icon: Calculator },
+    { href: '/speaking', label: 'Speaking', icon: Mic },
   ]
 
   return (

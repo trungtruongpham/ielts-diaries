@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from '@/app/(auth)/actions'
 import { Button } from '@/components/ui/button'
@@ -16,6 +17,8 @@ export function LoginForm() {
   const [isPending, startTransition] = useTransition()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -23,7 +26,7 @@ export function LoginForm() {
     const formData = new FormData(e.currentTarget)
 
     startTransition(async () => {
-      const result = await signIn(formData)
+      const result = await signIn(formData, redirectTo)
       if (result?.error) {
         setError(result.error)
         toast.error('Sign in failed', { description: result.error })

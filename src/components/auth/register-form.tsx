@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signUp } from '@/app/(auth)/actions'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,8 @@ export function RegisterForm() {
   const [isPending, startTransition] = useTransition()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -40,7 +43,7 @@ export function RegisterForm() {
     }
 
     startTransition(async () => {
-      const result = await signUp(formData)
+      const result = await signUp(formData, redirectTo)
       if (result?.error) {
         setError(result.error)
         toast.error('Registration failed', { description: result.error })
