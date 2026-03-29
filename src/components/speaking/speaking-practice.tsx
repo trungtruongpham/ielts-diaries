@@ -37,17 +37,22 @@ export function SpeakingPractice({ session, onExit, className }: SpeakingPractic
     nextQuestion,
     playQuestion,
     totalAnswered,
+    practiceMode,
   } = session
 
   const currentQ = questions[currentQuestion]
   const isPart2 = currentPart === 2
+  const atEndOfCurrentPart = currentQuestion >= PART_TOTAL_QUESTIONS[currentPart] - 1
 
-  const isLastQuestion =
-    currentQuestion >= PART_TOTAL_QUESTIONS[currentPart] - 1 && currentPart === 3
+  // Determine whether tapping "Next" will end the whole practice session.
+  // • Single-part modes: always done after the last question in this part.
+  // • Full-test mode: done only after the last question in Part 3.
+  const isLastInSession =
+    atEndOfCurrentPart && (practiceMode !== 'full' || currentPart === 3)
 
-  const nextLabel = isLastQuestion
-    ? 'Complete Test'
-    : currentQuestion >= PART_TOTAL_QUESTIONS[currentPart] - 1
+  const nextLabel = isLastInSession
+    ? 'Complete Practice'
+    : atEndOfCurrentPart
     ? `Start Part ${currentPart + 1} →`
     : 'Next Question'
 
@@ -63,6 +68,7 @@ export function SpeakingPractice({ session, onExit, className }: SpeakingPractic
           currentPart={currentPart}
           currentQuestion={currentQuestion}
           questionsInPart={PART_TOTAL_QUESTIONS[currentPart]}
+          practiceMode={practiceMode}
           className="flex-1"
         />
         <button

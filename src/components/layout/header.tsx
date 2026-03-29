@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   Calculator, LayoutDashboard, LogOut,
-  Menu, X, Target, ClipboardList, Mic,
+  Menu, X, Target, ClipboardList, Mic, PenLine,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -104,6 +104,12 @@ function UserMenu({ user, onLogout }: { user: User; onLogout: () => void }) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
+            <Link href="/dashboard/writing" className="flex cursor-pointer items-center gap-2">
+              <PenLine className="h-4 w-4 text-muted-foreground" />
+              Writing History
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
             <Link href="/dashboard/goal" className="flex cursor-pointer items-center gap-2">
               <Target className="h-4 w-4 text-muted-foreground" />
               My Goal
@@ -155,6 +161,7 @@ export function Header() {
   const navLinks = [
     { href: '/calculator', label: 'Calculator', icon: Calculator },
     { href: '/speaking', label: 'Speaking', icon: Mic },
+    { href: '/writing', label: 'Writing', icon: PenLine },
   ]
 
   return (

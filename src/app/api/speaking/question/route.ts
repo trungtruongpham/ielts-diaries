@@ -8,7 +8,9 @@ import { getSpeakingSession } from '@/lib/db/speaking-sessions'
  * Body: {
  *   sessionId: string
  *   part: 2 | 3
- *   part2Topic?: string   // Required for Part 3 — the topic from the Part 2 card
+ *   part2Topic?: string   // Optional for Part 3 — provides context from the Part 2 card.
+ *                         // When omitted (standalone Part 3 mode), the engine uses its
+ *                         // built-in fallback topic.
  * }
  *
  * Generates questions for the requested part.
@@ -47,9 +49,7 @@ export async function POST(req: Request): Promise<Response> {
     part = body.part
     part2Topic = typeof body.part2Topic === 'string' ? body.part2Topic : undefined
 
-    if (part === 3 && !part2Topic) {
-      return NextResponse.json({ error: '`part2Topic` is required for Part 3' }, { status: 400 })
-    }
+    // part2Topic is optional: omitting it is valid for standalone Part 3 practice
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }

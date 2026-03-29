@@ -2,11 +2,19 @@
 
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import type { SessionScores } from '@/hooks/use-speaking-session'
+import type { SessionScores, PracticeMode } from '@/hooks/use-speaking-session'
+
+const MODE_COMPLETION_TEXT: Record<PracticeMode, string> = {
+  part1: 'You completed a Part 1 practice. Try Part 2, Part 3, or the Full Test next.',
+  part2: 'You completed a Part 2 practice. Try Part 1, Part 3, or the Full Test next.',
+  part3: 'You completed a Part 3 practice. Try Part 1, Part 2, or the Full Test next.',
+  full:  'You completed all 3 parts of the IELTS Speaking test.',
+}
 
 interface SessionResultsProps {
   scores: SessionScores
   sessionId: string | null
+  practiceMode: PracticeMode
   onPracticeAgain: () => void
   className?: string
 }
@@ -44,6 +52,7 @@ function bandLabel(b: number) {
 export function SessionResults({
   scores,
   sessionId,
+  practiceMode,
   onPracticeAgain,
   className,
 }: SessionResultsProps) {
@@ -54,7 +63,7 @@ export function SessionResults({
         <div className="mb-2 text-4xl">🎉</div>
         <h2 className="mb-1 text-2xl font-bold text-foreground">Practice Complete!</h2>
         <p className="mb-6 text-sm text-muted-foreground">
-          You completed all 3 parts of the IELTS Speaking test.
+          {MODE_COMPLETION_TEXT[practiceMode]}
         </p>
 
         {/* Big overall band */}

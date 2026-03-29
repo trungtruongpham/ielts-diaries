@@ -6,7 +6,7 @@ import { Mic, Calendar, Trash2, ChevronRight, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { deleteSpeakingSessionAction } from '@/app/dashboard/speaking/actions'
-import type { DbSpeakingSession } from '@/lib/db/types'
+import type { DbSpeakingSession, PracticeMode } from '@/lib/db/types'
 
 interface SessionHistoryListProps {
   sessions: DbSpeakingSession[]
@@ -38,6 +38,25 @@ function statusBadge(status: DbSpeakingSession['status']) {
         : 'bg-muted text-muted-foreground'
     )}>
       {status === 'in_progress' ? 'In Progress' : 'Abandoned'}
+    </span>
+  )
+}
+
+const MODE_BADGES: Partial<Record<PracticeMode, { emoji: string; label: string; cls: string }>> = {
+  part1: { emoji: '🗣️', label: 'Part 1', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300' },
+  part2: { emoji: '📝', label: 'Part 2', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300' },
+  part3: { emoji: '💬', label: 'Part 3', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' },
+}
+
+function modeBadge(mode: PracticeMode) {
+  const info = MODE_BADGES[mode]
+  if (!info) return null  // 'full' — no badge needed
+  return (
+    <span className={cn(
+      'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+      info.cls,
+    )}>
+      {info.emoji} {info.label}
     </span>
   )
 }
@@ -78,6 +97,7 @@ function SessionCard({
           <p className="font-medium text-foreground capitalize">
             {session.topic ?? 'Speaking Practice'}
           </p>
+          {modeBadge(session.practice_mode)}
           {statusBadge(session.status)}
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">

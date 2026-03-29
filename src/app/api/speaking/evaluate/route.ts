@@ -85,6 +85,7 @@ export async function POST(req: Request): Promise<Response> {
     feedback: evaluation.feedback,
     strengths: evaluation.strengths,
     improvements: evaluation.improvements,
+    sample_answer: evaluation.sample_answer || undefined,
   }
 
   const { data: answer, error: dbError } = await createSpeakingAnswer({

@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { AudioWaveform } from './audio-waveform'
-import { formatDuration } from '@/lib/audio-utils'
+import { formatDuration, unlockAudioContext } from '@/lib/audio-utils'
 
 interface RecordingControlsProps {
   isRecording: boolean
@@ -46,7 +46,10 @@ export function RecordingControls({
 
       {/* Big record / stop button */}
       <button
-        onClick={isRecording ? onStop : onStart}
+        onClick={() => {
+          unlockAudioContext()           // keep context unlocked across interactions
+          if (isRecording) onStop(); else onStart()
+        }}
         disabled={isEvaluating || isExaminerSpeaking}
         className={cn(
           'relative flex h-20 w-20 items-center justify-center rounded-full text-white shadow-lg transition-all duration-200 focus:outline-none focus:ring-4',

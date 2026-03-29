@@ -28,6 +28,28 @@ export function randomPart1Topic(): string {
   return PART1_TOPICS[Math.floor(Math.random() * PART1_TOPICS.length)]
 }
 
+// ── Part 3 standalone topic pool ──────────────────────────────────────────────
+// Used when practising Part 3 in isolation — no Part 2 card is available,
+// so we seed the discussion questions with a thematic area instead.
+
+export const PART3_DISCUSSION_TOPICS = [
+  'the impact of technology on daily life',
+  'changes in education systems',
+  'environmental responsibility',
+  'the role of media in society',
+  'urbanisation and city living',
+  'the importance of cultural traditions',
+  'work-life balance in modern society',
+  'the influence of social media on youth',
+  'globalisation and local cultures',
+  'the future of transportation',
+] as const
+
+/** Pick a random Part 3 discussion theme for standalone practice */
+export function randomPart3Topic(): string {
+  return PART3_DISCUSSION_TOPICS[Math.floor(Math.random() * PART3_DISCUSSION_TOPICS.length)]
+}
+
 // ── Shared examiner persona ───────────────────────────────────────────────────
 
 export const SPEAKING_EXAMINER_SYSTEM = `\

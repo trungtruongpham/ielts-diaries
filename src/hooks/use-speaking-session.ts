@@ -5,6 +5,10 @@ import { useAudioRecorder } from './use-audio-recorder'
 import { useSpeechRecognition } from './use-speech-recognition'
 import { uploadAudioBlob, playTTS } from '@/lib/audio-utils'
 import type { SpeakingQuestion, SpeakingEvaluation } from '@/lib/ai/types'
+import type { PracticeMode } from '@/lib/db/types'
+
+// Re-export PracticeMode so consumers only need one import
+export type { PracticeMode }
 
 export type SessionStatus =
   | 'idle'
@@ -24,11 +28,14 @@ export interface SessionScores {
   overall_band: number
 }
 
+// ── API response shapes ────────────────────────────────────────────────────────
+
 interface StartResponse {
   sessionId: string
-  topic: string
-  part: 1
+  topic: string | undefined
+  part: 1 | 2 | 3           // dynamic — set by the server based on practiceMode
   questions: SpeakingQuestion[]
+  practiceMode: PracticeMode // echoed back by the server
 }
 
 interface QuestionResponse {
@@ -51,6 +58,8 @@ interface CompleteResponse {
   }
 }
 
+// ── Public interface ───────────────────────────────────────────────────────────
+
 export interface UseSpeakingSessionReturn {
   // Session state
   sessionId: string | null
@@ -60,9 +69,10 @@ export interface UseSpeakingSessionReturn {
   questions: SpeakingQuestion[]
   status: SessionStatus
   totalAnswered: number
+  practiceMode: PracticeMode
 
   // Actions
-  startSession: () => Promise<void>
+  startSession: (mode?: PracticeMode) => Promise<void>
   startRecording: () => void
   stopRecording: () => Promise<void>
   nextQuestion: () => void
@@ -88,7 +98,19 @@ export interface UseSpeakingSessionReturn {
   clearError: () => void
 }
 
+// ── Constants ──────────────────────────────────────────────────────────────────
+
 const PART_QUESTION_COUNTS = { 1: 5, 2: 1, 3: 5 } as const
+
+/**
+ * Returns true when the full-test flow should automatically fetch the next part.
+ * Single-part modes always return false — the session ends after the current part.
+ */
+function shouldAdvanceToNextPart(mode: PracticeMode, currentPart: 1 | 2 | 3): boolean {
+  return mode === 'full' && currentPart < 3
+}
+
+// ── Hook ───────────────────────────────────────────────────────────────────────
 
 export function useSpeakingSession(): UseSpeakingSessionReturn {
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -102,8 +124,9 @@ export function useSpeakingSession(): UseSpeakingSessionReturn {
   const [isExaminerSpeaking, setIsExaminerSpeaking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [totalAnswered, setTotalAnswered] = useState(0)
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>('full')
 
-  // Track part2 topic for Part 3 context
+  // Track part2 topic for Part 3 context (full-test flow only)
   const part2TopicRef = useRef<string>('')
   const userIdRef = useRef<string>('')
 
@@ -116,6 +139,12 @@ export function useSpeakingSession(): UseSpeakingSessionReturn {
 
   const playQuestion = useCallback(async (text: string) => {
     setIsExaminerSpeaking(true)
+
+    // Stop speech recognition while TTS plays — otherwise the browser's STT
+    // picks up the examiner's voice and adds it to the user's transcript.
+    const wasListening = stt.isListening
+    if (wasListening) stt.stopListening()
+
     try {
       await playTTS(text)
     } catch (err) {
@@ -123,22 +152,39 @@ export function useSpeakingSession(): UseSpeakingSessionReturn {
       console.warn('[useSpeakingSession] TTS failed:', err)
     } finally {
       setIsExaminerSpeaking(false)
+      // Restore STT if it was active before TTS started (defensive — normally
+      // STT is only active while the user is recording, not during TTS)
+      if (wasListening) stt.startListening()
     }
-  }, [])
+  }, [stt])
+
 
   // ── Session start ──────────────────────────────────────────────────────────
 
-  const startSession = useCallback(async () => {
+  const startSession = useCallback(async (mode: PracticeMode = 'full') => {
+    setPracticeMode(mode)
     setStatus('loading')
     setError(null)
-    setCurrentPart(1)
     setCurrentQuestion(0)
     setTotalAnswered(0)
     setFinalScores(null)
     setCurrentFeedback(null)
+    part2TopicRef.current = ''
+
+    // Optimistically set the starting part so the UI renders correctly
+    // while the network request is in-flight
+    const expectedStartPart: 1 | 2 | 3 =
+      mode === 'part2' ? 2 :
+      mode === 'part3' ? 3 :
+      1
+    setCurrentPart(expectedStartPart)
 
     try {
-      const res = await fetch('/api/speaking/start', { method: 'POST' })
+      const res = await fetch('/api/speaking/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ practiceMode: mode }),
+      })
       if (!res.ok) {
         const { error: msg } = await res.json() as { error: string }
         throw new Error(msg ?? 'Failed to start session')
@@ -146,7 +192,8 @@ export function useSpeakingSession(): UseSpeakingSessionReturn {
 
       const data = await res.json() as StartResponse
       setSessionId(data.sessionId)
-      setTopic(data.topic)
+      setTopic(data.topic ?? '')
+      setCurrentPart(data.part)            // authoritative part from server
       setQuestions(data.questions)
       setStatus('question')
 
@@ -243,7 +290,7 @@ export function useSpeakingSession(): UseSpeakingSessionReturn {
     const partTotal = PART_QUESTION_COUNTS[currentPart]
 
     if (nextIdx < partTotal && nextIdx < questions.length) {
-      // Stay in current part
+      // ── Stay in current part ──────────────────────────────────────────────
       setCurrentQuestion(nextIdx)
       setCurrentFeedback(null)
       setStatus('question')
@@ -251,8 +298,9 @@ export function useSpeakingSession(): UseSpeakingSessionReturn {
       stt.resetTranscript()
       const next = questions[nextIdx]
       if (next) playQuestion(next.text)
-    } else if (currentPart < 3) {
-      // Advance to next part
+
+    } else if (shouldAdvanceToNextPart(practiceMode, currentPart)) {
+      // ── Advance to next part (full-test mode only) ────────────────────────
       const nextPart = (currentPart + 1) as 2 | 3
       setStatus('loading')
       setCurrentFeedback(null)
@@ -292,14 +340,18 @@ export function useSpeakingSession(): UseSpeakingSessionReturn {
         setError(msg)
         setStatus('feedback')
       }
+
     } else {
-      // All 3 parts done — go to completion
+      // ── End of practice — complete session ────────────────────────────────
+      // Triggered when:
+      //   • Single-part mode: last question in the chosen part answered
+      //   • Full-test mode:   last question in Part 3 answered
       setStatus('loading')
       await completeSession()
     }
-  // completeSession included via closure
+  // completeSession is accessed via closure (stable ref via useCallback below)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentQuestion, currentPart, questions, sessionId, recorder, stt, playQuestion])
+  }, [currentQuestion, currentPart, questions, sessionId, practiceMode, recorder, stt, playQuestion])
 
   const completeSession = useCallback(async () => {
     if (!sessionId) { setStatus('completed'); return }
@@ -325,6 +377,7 @@ export function useSpeakingSession(): UseSpeakingSessionReturn {
     questions,
     status,
     totalAnswered,
+    practiceMode,
     startSession,
     startRecording,
     stopRecording,

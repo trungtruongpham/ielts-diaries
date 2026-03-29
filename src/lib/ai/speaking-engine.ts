@@ -153,6 +153,11 @@ export async function evaluateAnswer(
     ? raw.feedback
     : 'Response evaluated.'
 
+  // sample_answer is optional — gracefully degrade to '' if the LLM omits it
+  const sample_answer = typeof raw.sample_answer === 'string'
+    ? raw.sample_answer.trim()
+    : ''
+
   return {
     fluency_coherence: fc,
     lexical_resource: lr,
@@ -162,6 +167,7 @@ export async function evaluateAnswer(
     feedback,
     strengths,
     improvements,
+    sample_answer,
   }
 }
 

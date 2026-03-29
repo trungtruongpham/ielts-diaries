@@ -60,6 +60,7 @@ export interface SpeakingEvaluation {
   feedback: string               // 2-3 sentence overall comment
   strengths: string[]            // 1-2 items
   improvements: string[]         // 1-2 items
+  sample_answer: string          // Band 7-8 model answer for this question
 }
 
 export interface SpeakingSessionScores {
@@ -68,4 +69,24 @@ export interface SpeakingSessionScores {
   grammar_band: number
   pronunciation_band: number
   overall_band: number
+}
+
+// ── IELTS Writing types ────────────────────────────────────────────────────
+
+export interface WritingEvaluation {
+  task_achievement?: number     // Task 1 only (0–9, 0.5 steps)
+  task_response?: number        // Task 2 only (0–9, 0.5 steps)
+  coherence_cohesion: number
+  lexical_resource: number
+  grammatical_range: number
+  overall: number               // avg of 4 criteria, nearest 0.5
+  feedback: string
+  strengths: string[]
+  improvements: string[]
+  model_answer: string
+  band_breakdown: {
+    criterion: string
+    score: number
+    explanation: string
+  }[]
 }

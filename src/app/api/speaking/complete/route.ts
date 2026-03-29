@@ -65,6 +65,7 @@ export async function POST(req: Request): Promise<Response> {
         feedback: f.feedback,
         strengths: f.strengths,
         improvements: f.improvements,
+        sample_answer: f.sample_answer ?? '',
       }
     })
 

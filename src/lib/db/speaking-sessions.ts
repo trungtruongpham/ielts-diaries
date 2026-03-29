@@ -5,15 +5,20 @@ import type {
   DbSpeakingAnswer,
   InsertSpeakingAnswer,
   CompleteSpeakingSession,
+  PracticeMode,
 } from './types'
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
 
 /**
  * Create a new in-progress speaking session for the current user.
+ *
+ * @param topic        Random topic string (Part 1 topic or Part 3 discussion theme)
+ * @param practiceMode Which part(s) the user chose to practice. Defaults to 'full'.
  */
 export async function createSpeakingSession(
-  topic?: string
+  topic?: string,
+  practiceMode: PracticeMode = 'full'
 ): Promise<{ data: DbSpeakingSession | null; error: string | null }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -21,7 +26,12 @@ export async function createSpeakingSession(
 
   const { data, error } = await supabase
     .from('speaking_sessions')
-    .insert({ user_id: user.id, topic: topic ?? null, status: 'in_progress' })
+    .insert({
+      user_id: user.id,
+      topic: topic ?? null,
+      status: 'in_progress',
+      practice_mode: practiceMode,
+    })
     .select()
     .single()
 

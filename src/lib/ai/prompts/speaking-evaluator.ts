@@ -57,7 +57,12 @@ Duration of this answer: ${durationSeconds} seconds.
 IMPORTANT:
 - Be calibrated and honest — do not inflate scores to be encouraging
 - Scores must reflect real IELTS examiner standards (e.g., a 7.0 FC means genuinely fluent speech)
+- When generating sample_answer: write in natural spoken English (NOT academic prose), first-person,
+  with discourse markers (Well, Actually, Having said that, To be honest…). The sample MUST
+  specifically address areas the candidate struggled with and contrast with their actual response.
 - Return ONLY a valid JSON object — no markdown, no preamble, no trailing text`
+
+  const sampleWordCount = part === 2 ? '180–220 words' : '60–120 words'
 
   const user = `\
 IELTS Speaking Part ${part} Question:
@@ -74,7 +79,8 @@ Evaluate this response and return a JSON object in EXACTLY this format:
   "pronunciation": <number 0-9 in 0.5 steps>,
   "feedback": "<2-3 sentence overall comment on the response quality>",
   "strengths": ["<strength 1>", "<strength 2>"],
-  "improvements": ["<improvement tip 1>", "<improvement tip 2>"]
+  "improvements": ["<improvement tip 1>", "<improvement tip 2>"],
+  "sample_answer": "<A natural Band 7-8 spoken response (~${sampleWordCount}) to the same question. Written in first-person spoken English with discourse markers. Uses varied vocabulary, complex structures, and cohesive devices. Addresses the question fully. Specifically improves on the weaknesses identified in the candidate's response above.>"
 }`
 
   return { system, user }

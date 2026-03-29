@@ -62,16 +62,18 @@ export default function SpeakingPage() {
       {/* Lobby — idle */}
       {session.status === 'idle' && (
         <SpeakingLobby
-          onStart={session.startSession}
+          onStart={(mode) => session.startSession(mode)}
           isLoading={false}
+          loadingMode={null}
         />
       )}
 
       {/* Initial loading — session starting */}
       {session.status === 'loading' && session.sessionId === null && (
         <SpeakingLobby
-          onStart={session.startSession}
+          onStart={(mode) => session.startSession(mode)}
           isLoading={true}
+          loadingMode={session.practiceMode}
         />
       )}
 
@@ -90,6 +92,7 @@ export default function SpeakingPage() {
         <SessionResults
           scores={session.finalScores}
           sessionId={session.sessionId}
+          practiceMode={session.practiceMode}
           onPracticeAgain={() => window.location.reload()}
         />
       )}

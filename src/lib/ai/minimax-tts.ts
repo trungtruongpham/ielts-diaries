@@ -1,9 +1,23 @@
 // MiniMax TTS client — Speech-02 via MiniMax Audio API
 // Server-side only. Never import from client components.
+//
+// ⚠️  IMPORTANT — API Key Requirements
+// This client calls MiniMax's own API directly. It requires a NATIVE MiniMax API
+// key from https://minimax.io/user-center/basic-information/interface-key
+// (a "General API Key" that supports all modalities, NOT a Coding Plan key).
+//
+// An OpenRouter key (sk-or-v1-...) will always fail with error code 1004 because
+// OpenRouter does not proxy the MiniMax TTS endpoint.
+//
+// Required env vars:
+//   MINIMAX_API_KEY=<your minimax.io general api key>
+//
+// The international endpoint is used (works outside of mainland China).
 
 import type { TTSOptions, TTSResult } from './types'
 
-const TTS_URL = 'https://api.minimax.io/v1/t2a_v2'
+// International endpoint (US West) — works globally outside mainland China
+const TTS_URL = 'https://api-uw.minimax.io/v1/t2a_v2'
 
 /** Neutral, clear examiner-quality voice */
 const DEFAULT_VOICE_ID = 'Calm_Woman'
@@ -11,6 +25,15 @@ const DEFAULT_VOICE_ID = 'Calm_Woman'
 function getApiKey(): string {
   const key = process.env.MINIMAX_API_KEY
   if (!key) throw new Error('[MiniMax TTS] MINIMAX_API_KEY is not set')
+
+  // Detect a misconfigured OpenRouter key early and give a clear message
+  if (key.startsWith('sk-or-')) {
+    throw new Error(
+      '[MiniMax TTS] MINIMAX_API_KEY appears to be an OpenRouter key (sk-or-...). ' +
+      'This endpoint requires a native MiniMax API key from https://minimax.io/user-center/basic-information/interface-key'
+    )
+  }
+
   return key
 }
 
@@ -70,16 +93,19 @@ export async function textToSpeech(
     )
   }
 
-  const audioBase64 = data.data?.audio
-  if (!audioBase64) {
+  const audioHex = data.data?.audio
+  if (!audioHex) {
     throw new Error('[MiniMax TTS] No audio data in response')
   }
 
-  // Decode base64 → ArrayBuffer
-  const binaryString = atob(audioBase64)
-  const bytes = new Uint8Array(binaryString.length)
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
+  // MiniMax t2a_v2 returns audio as a HEX-encoded string (NOT base64).
+  // e.g. "49443304..." where 49=I, 44=D, 33=3 → "ID3" MP3 header.
+  if (audioHex.length % 2 !== 0) {
+    throw new Error('[MiniMax TTS] Audio hex string has odd length — unexpected format')
+  }
+  const bytes = new Uint8Array(audioHex.length / 2)
+  for (let i = 0; i < audioHex.length; i += 2) {
+    bytes[i >> 1] = parseInt(audioHex.substring(i, i + 2), 16)
   }
 
   return {

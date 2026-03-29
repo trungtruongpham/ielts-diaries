@@ -72,8 +72,42 @@ export async function uploadAudioBlob(params: {
   return data?.signedUrl ?? null
 }
 
+// ── AudioContext unlock ────────────────────────────────────────────────────────
+// Browsers require a user gesture before AudioContext can play audio.
+// We keep a single lazily-created context and resume it on first interaction.
+
+let _audioCtx: AudioContext | null = null
+
+function getAudioContext(): AudioContext {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+  }
+  return _audioCtx
+}
+
+/**
+ * Must be called directly inside a click/touch handler (synchronously) to
+ * unlock the AudioContext on browsers that require a user gesture.
+ * Safe to call multiple times.
+ */
+export function unlockAudioContext(): void {
+  try {
+    const ctx = getAudioContext()
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => { /* best-effort */ })
+    }
+  } catch {
+    // No AudioContext support — silent fallback
+  }
+}
+
 /**
  * Play TTS audio from the /api/speaking/tts route.
+ *
+ * Primary path: AudioContext + AudioBufferSourceNode (bypasses autoplay policy
+ * once the context is unlocked via a user gesture with unlockAudioContext()).
+ * Fallback path: HTMLAudioElement (ObjectURL), used if AudioContext decode fails.
+ *
  * Returns when audio finishes playing, or rejects on error.
  */
 export async function playTTS(text: string): Promise<void> {
@@ -87,20 +121,53 @@ export async function playTTS(text: string): Promise<void> {
     throw new Error(`TTS request failed: ${res.status}`)
   }
 
+  // Keep the original buffer available for the HTML fallback —
+  // decodeAudioData DETACHES the ArrayBuffer it receives, so we pass a copy.
   const arrayBuffer = await res.arrayBuffer()
-  const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg' })
-  const url = URL.createObjectURL(audioBlob)
 
-  return new Promise((resolve, reject) => {
-    const audio = new Audio(url)
-    audio.onended = () => {
-      URL.revokeObjectURL(url)
-      resolve()
+  // ── Primary: AudioContext ─────────────────────────────────────────────────
+  try {
+    const ctx = getAudioContext()
+
+    if (ctx.state === 'suspended') {
+      await ctx.resume()
     }
-    audio.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('Audio playback failed'))
-    }
-    audio.play().catch(reject)
-  })
+
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0))
+
+    return new Promise((resolve, reject) => {
+      const source = ctx.createBufferSource()
+      source.buffer = audioBuffer
+      source.connect(ctx.destination)
+      source.addEventListener('ended', () => resolve())
+      try {
+        source.start(0)
+      } catch (err) {
+        reject(err)
+      }
+    })
+  } catch (ctxErr) {
+    // ── Fallback: HTMLAudioElement ──────────────────────────────────────────
+    console.warn('[playTTS] AudioContext failed, falling back to HTMLAudioElement:', ctxErr)
+
+    const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' })
+    const url = URL.createObjectURL(blob)
+
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(url)
+      audio.oncanplaythrough = () => {
+        audio.play().catch(err => {
+          URL.revokeObjectURL(url)
+          reject(err)
+        })
+      }
+      audio.onended = () => { URL.revokeObjectURL(url); resolve() }
+      audio.onerror = () => {
+        URL.revokeObjectURL(url)
+        reject(new Error('Audio playback failed'))
+      }
+      audio.load()
+    })
+  }
 }
+
