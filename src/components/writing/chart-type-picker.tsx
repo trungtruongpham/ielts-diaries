@@ -8,7 +8,7 @@ export interface ChartTypeOption {
   hint: string | null
   label: string
   description: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
   accentColor: string
   borderHover: string
   bgHover: string
@@ -166,7 +166,7 @@ export function ChartTypePicker({ onSelect, onBack, disabled }: ChartTypePickerP
                 opt.iconBg,
                 !disabled && isHovered && 'scale-110',
               )}>
-                <Icon className={cn('h-4.5 w-4.5', opt.iconColor)} style={{ width: 18, height: 18 }} />
+                <Icon className={cn('h-[18px] w-[18px]', opt.iconColor)} />
               </div>
 
               {/* Label + description */}
