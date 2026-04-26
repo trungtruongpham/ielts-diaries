@@ -8,9 +8,11 @@ import { getRecentWritingSessionsAction } from '@/app/dashboard/writing/actions'
 import { getBandColorClass, getBandDescriptor } from '@/lib/ielts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScoreHistoryChart } from '@/components/charts/score-history-chart'
-import { ModuleRadarChart } from '@/components/charts/module-radar-chart'
-import { GoalProgress } from '@/components/goal/goal-progress'
+import {
+  ScoreHistoryChart,
+  ModuleRadarChart,
+  GoalProgress,
+} from '@/components/dashboard/dashboard-chart-components'
 import {
   LayoutDashboard, Plus, ClipboardList, Target as TargetIcon,
   ArrowRight, TrendingUp, Headphones, BookOpen, Mic, PenLine,
@@ -29,7 +31,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/login?redirectTo=/dashboard')
 
   const [allResults, goal, recentSpeaking, recentWriting] = await Promise.all([
-    getUserTestResults(),      // all — for charts
+    getUserTestResults(50),      // capped — enough for charts
     getUserGoal(),
     getRecentSpeakingSessions(3),
     getRecentWritingSessionsAction(3),

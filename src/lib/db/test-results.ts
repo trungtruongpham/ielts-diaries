@@ -5,14 +5,18 @@ import type { DbTestResult, InsertTestResult } from './types'
 /**
  * Fetch all test results for the current user, ordered by test_date DESC
  */
-export async function getUserTestResults(): Promise<DbTestResult[]> {
+export async function getUserTestResults(limit?: number): Promise<DbTestResult[]> {
   const supabase = await createClient()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('test_results')
     .select('*')
     .order('test_date', { ascending: false })
     .order('created_at', { ascending: false })
+
+  if (limit) query = query.limit(limit)
+
+  const { data, error } = await query
 
   if (error) {
     console.error('[getUserTestResults]', error)
