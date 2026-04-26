@@ -16,6 +16,7 @@ export async function POST(req: Request): Promise<Response> {
   let session_id: string
   let task: 1 | 2
   let prompt_type_hint: string | undefined
+  let model: string | undefined
 
   try {
     const body = await req.json() as Record<string, unknown>
@@ -28,6 +29,7 @@ export async function POST(req: Request): Promise<Response> {
     session_id = body.session_id
     task = body.task as 1 | 2
     prompt_type_hint = typeof body.prompt_type_hint === 'string' ? body.prompt_type_hint : undefined
+    model = typeof body.model === 'string' ? body.model : undefined
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
@@ -51,7 +53,7 @@ export async function POST(req: Request): Promise<Response> {
   let promptType: string
   let chartData = null
   try {
-    const result = await generateWritingPrompt(promptTaskType, { promptTypeHint: prompt_type_hint })
+    const result = await generateWritingPrompt(promptTaskType, { promptTypeHint: prompt_type_hint, model })
     promptText = result.promptText
     promptType = result.promptType
     chartData = result.chartData

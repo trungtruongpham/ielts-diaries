@@ -10,6 +10,8 @@ export interface ChatCompletionOptions {
   max_tokens?: number
   /** Force JSON output */
   json?: boolean
+  /** Override the default model (OpenRouter model ID) */
+  model?: string
 }
 
 export interface ChatCompletionResult {

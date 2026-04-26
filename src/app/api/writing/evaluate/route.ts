@@ -18,6 +18,7 @@ export async function POST(req: Request): Promise<Response> {
   let user_answer: string
   let word_count: number
   let time_taken_seconds: number | null = null
+  let model: string | undefined
 
   try {
     const body = await req.json() as Record<string, unknown>
@@ -36,6 +37,7 @@ export async function POST(req: Request): Promise<Response> {
     if (typeof body.time_taken_seconds === 'number') {
       time_taken_seconds = Math.round(body.time_taken_seconds)
     }
+    model = typeof body.model === 'string' ? body.model : undefined
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
@@ -56,7 +58,8 @@ export async function POST(req: Request): Promise<Response> {
       answer.prompt_text,
       answer.prompt_type,
       user_answer,
-      word_count
+      word_count,
+      model
     )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Evaluation failed'

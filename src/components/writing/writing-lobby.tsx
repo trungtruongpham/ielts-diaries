@@ -5,11 +5,14 @@ import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import type { WritingTaskType } from '@/hooks/use-writing-session'
 import { ChartTypePicker } from './chart-type-picker'
+import { ModelSelector } from './model-selector'
 
 interface WritingLobbyProps {
   onStart: (taskType: WritingTaskType, chartTypeHint?: string) => void
   isLoading: boolean
   loadingMode: WritingTaskType | null
+  selectedModelId: string
+  onModelChange: (modelId: string) => void
   className?: string
 }
 
@@ -150,7 +153,7 @@ function TaskCard({
   )
 }
 
-export function WritingLobby({ onStart, isLoading, loadingMode, className }: WritingLobbyProps) {
+export function WritingLobby({ onStart, isLoading, loadingMode, selectedModelId, onModelChange, className }: WritingLobbyProps) {
   const [lobbyState, setLobbyState] = useState<'menu' | 'chart-picker'>('menu')
 
   function handleTaskCardClick(taskType: WritingTaskType) {
@@ -189,6 +192,13 @@ export function WritingLobby({ onStart, isLoading, loadingMode, className }: Wri
             Choose what you&apos;d like to practice today. Get AI feedback on all 4 IELTS Writing criteria.
           </p>
         </div>
+
+        {/* Model selector */}
+        <ModelSelector
+          value={selectedModelId}
+          onChange={onModelChange}
+          disabled={isLoading}
+        />
 
         {/* Task grid */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -1,7 +1,8 @@
-// OpenRouter API client — MiniMax M2.5 via OpenRouter
+// OpenRouter API client — supports multiple models via OpenRouter
 // Server-side only. Never import from client components.
 
 import type { ChatMessage, ChatCompletionOptions, ChatCompletionResult } from './types'
+import { modelSupportsJsonMode } from './models'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const MODEL = 'minimax/minimax-m2.5'
@@ -14,23 +15,24 @@ function getApiKey(): string {
 }
 
 /**
- * Send a chat completion request to MiniMax M2.5 via OpenRouter.
+ * Send a chat completion request to OpenRouter.
+ * Uses options.model if provided, otherwise falls back to the default MODEL.
  * Returns the assistant message content as a string.
  */
 export async function chatCompletion(
   messages: ChatMessage[],
   options: ChatCompletionOptions = {}
 ): Promise<ChatCompletionResult> {
-  const { temperature = 0.7, max_tokens = 2048, json = false } = options
+  const { temperature = 0.7, max_tokens = 2048, json = false, model = MODEL } = options
 
   const body: Record<string, unknown> = {
-    model: MODEL,
+    model,
     messages,
     temperature,
     max_tokens,
   }
 
-  if (json) {
+  if (json && modelSupportsJsonMode(model)) {
     body.response_format = { type: 'json_object' }
   }
 

@@ -3,6 +3,9 @@
 import { useState, useCallback, useRef } from 'react'
 import type { WritingTaskType, ChartData } from '@/lib/db/types'
 import type { WritingEvaluation } from '@/lib/ai/types'
+import { DEFAULT_MODEL_ID } from '@/lib/ai/models'
+
+const MODEL_STORAGE_KEY = 'ielts-model'
 
 // Re-export so consumers only need one import
 export type { WritingTaskType }
@@ -30,6 +33,7 @@ export interface UseWritingSessionReturn {
   task2Evaluation: WritingEvaluation | null
   finalBands: { task1: number | null; task2: number | null; overall: number } | null
   error: string | null
+  selectedModelId: string
 
   // Actions
   startSession: (taskType: WritingTaskType, testType?: 'academic' | 'general', chartTypeHint?: string) => Promise<void>
@@ -37,6 +41,7 @@ export interface UseWritingSessionReturn {
   submitAnswer: (answer: string, wordCount: number, timeTakenSeconds: number) => Promise<void>
   clearError: () => void
   reset: () => void
+  setSelectedModelId: (modelId: string) => void
 }
 
 // ── API response types ─────────────────────────────────────────────────────────
@@ -47,6 +52,11 @@ interface EvaluateResponse { evaluation: WritingEvaluation }
 interface CompleteResponse { task1_band: number | null; task2_band: number | null; overall_band: number }
 
 // ── Hook ───────────────────────────────────────────────────────────────────────
+
+function getStoredModelId(): string {
+  if (typeof window === 'undefined') return DEFAULT_MODEL_ID
+  return localStorage.getItem(MODEL_STORAGE_KEY) ?? DEFAULT_MODEL_ID
+}
 
 export function useWritingSession(): UseWritingSessionReturn {
   const [status, setStatus] = useState<WritingSessionStatus>('idle')
@@ -63,6 +73,14 @@ export function useWritingSession(): UseWritingSessionReturn {
   const [task2Evaluation, setTask2Evaluation] = useState<WritingEvaluation | null>(null)
   const [finalBands, setFinalBands] = useState<{ task1: number | null; task2: number | null; overall: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selectedModelId, setSelectedModelIdState] = useState<string>(getStoredModelId)
+
+  const setSelectedModelId = useCallback((modelId: string) => {
+    setSelectedModelIdState(modelId)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(MODEL_STORAGE_KEY, modelId)
+    }
+  }, [])
 
   const clearError = useCallback(() => setError(null), [])
 
@@ -92,6 +110,7 @@ export function useWritingSession(): UseWritingSessionReturn {
       body: JSON.stringify({
         session_id: sid,
         task,
+        model: selectedModelId,
         ...(hint ? { prompt_type_hint: hint } : {}),
       }),
     })
@@ -103,7 +122,7 @@ export function useWritingSession(): UseWritingSessionReturn {
     setCurrentAnswerId(data.answer_id)
     setCurrentPrompt({ text: data.prompt_text, type: data.prompt_type })
     setCurrentChartData(data.chart_data ?? null)
-  }, [])
+  }, [selectedModelId])
 
   // ── Internal: complete session ─────────────────────────────────────────────
 
@@ -199,6 +218,7 @@ export function useWritingSession(): UseWritingSessionReturn {
           user_answer: answer,
           word_count: wordCount,
           time_taken_seconds: timeTakenSeconds,
+          model: selectedModelId,
         }),
       })
       if (!evalRes.ok) {
@@ -230,7 +250,7 @@ export function useWritingSession(): UseWritingSessionReturn {
       setError(msg)
       setStatus('writing')
     }
-  }, [sessionId, currentAnswerId, currentTask, taskType, fetchPrompt, completeSession])
+  }, [sessionId, currentAnswerId, currentTask, taskType, selectedModelId, fetchPrompt, completeSession])
 
   return {
     status,
@@ -245,10 +265,12 @@ export function useWritingSession(): UseWritingSessionReturn {
     task2Evaluation,
     finalBands,
     error,
+    selectedModelId,
     startSession,
     confirmBrief,
     submitAnswer,
     clearError,
     reset,
+    setSelectedModelId,
   }
 }
