@@ -213,3 +213,42 @@ export type CompleteWritingSession = {
 }
 export type InsertWritingAnswer = Omit<DbWritingAnswer, 'id' | 'created_at'>
 
+// ── Vocabulary Spaced Repetition types ───────────────────────────────────────
+
+export interface DbVocabularyWord {
+  id: string
+  user_id: string
+  word: string
+  phonetic: string | null
+  part_of_speech: string | null
+  definition: string
+  example_sentence: string | null
+  synonyms: string[]
+  skill_tags: string[]
+  topic_tags: string[]
+  created_at: string
+}
+
+export interface DbVocabularyCard {
+  id: string
+  user_id: string
+  word_id: string
+  due: string
+  stability: number
+  difficulty: number
+  elapsed_days: number
+  scheduled_days: number
+  reps: number
+  lapses: number
+  state: 'New' | 'Learning' | 'Review' | 'Relearning'
+  last_review: string | null
+}
+
+export interface DbVocabularySettings {
+  user_id: string
+  daily_new_word_limit: number
+}
+
+export type InsertVocabularyWord = Omit<DbVocabularyWord, 'id' | 'created_at' | 'user_id'>
+export type InsertVocabularyCard = Omit<DbVocabularyCard, 'id' | 'user_id'>
+

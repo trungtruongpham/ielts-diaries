@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   Calculator, LayoutDashboard, LogOut,
-  Menu, X, Target, ClipboardList, Mic, PenLine,
+  Menu, X, Target, ClipboardList, Mic, PenLine, BookOpen, ChevronDown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -115,6 +115,12 @@ function UserMenu({ user, onLogout }: { user: User; onLogout: () => void }) {
               My Goal
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/vocabulary" className="flex cursor-pointer items-center gap-2">
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+              Vocabulary
+            </Link>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
@@ -160,9 +166,14 @@ export function Header() {
   // Only public nav items — Dashboard lives in the user avatar dropdown
   const navLinks = [
     { href: '/calculator', label: 'Calculator', icon: Calculator },
+  ]
+
+  const practiceLinks = [
     { href: '/speaking', label: 'Speaking', icon: Mic },
     { href: '/writing', label: 'Writing', icon: PenLine },
   ]
+
+  const isPracticeActive = practiceLinks.some(({ href }) => pathname.startsWith(href))
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-md">
@@ -207,6 +218,41 @@ export function Header() {
               {label}
             </Link>
           ))}
+
+          {/* Practice dropdown — logged-in users only */}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    'flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-150 outline-none',
+                    isPracticeActive
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  Practice
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" sideOffset={8}>
+                {practiceLinks.map(({ href, label, icon: Icon }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link
+                      href={href}
+                      className={cn(
+                        'flex cursor-pointer items-center gap-2',
+                        pathname.startsWith(href) && 'text-primary'
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
 
         {/* Desktop Auth — right side */}
@@ -257,6 +303,31 @@ export function Header() {
               </Link>
             ))}
 
+            {/* Practice section — logged-in users only */}
+            {user && (
+              <>
+                <p className="mt-1 px-3 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  Practice
+                </p>
+                {practiceLinks.map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150',
+                      pathname.startsWith(href)
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Link>
+                ))}
+              </>
+            )}
+
             <div className="mt-2 flex flex-col gap-1 border-t border-border pt-2">
               {user ? (
                 <>
@@ -287,6 +358,14 @@ export function Header() {
                   >
                     <Target className="h-4 w-4" />
                     My Goal
+                  </Link>
+                  <Link
+                    href="/dashboard/vocabulary"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Vocabulary
                   </Link>
                   <button
                     onClick={() => { setMobileOpen(false); handleLogout() }}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
-import { PenLine, Calendar, Trash2, Loader2 } from 'lucide-react'
+import { PenLine, Calendar, Trash2, Loader2, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { deleteWritingSessionAction } from '@/app/dashboard/writing/actions'
@@ -117,13 +117,24 @@ function SessionCard({
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setConfirmDelete(true)}
-            className="hidden rounded-lg p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 sm:block"
-            title="Delete session"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            {session.status === 'completed' && (
+              <Link
+                href={`/dashboard/writing/${session.id}`}
+                className="hidden rounded-lg p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-primary/10 hover:text-primary group-hover:opacity-100 sm:block"
+                title="Review session"
+              >
+                <Eye className="h-4 w-4" />
+              </Link>
+            )}
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="hidden rounded-lg p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 sm:block"
+              title="Delete session"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
     </div>

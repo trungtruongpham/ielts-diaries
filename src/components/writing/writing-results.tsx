@@ -202,6 +202,14 @@ export function WritingResults({
         >
           🔄 Practice Again
         </button>
+        {sessionId && (
+          <Link
+            href={`/dashboard/writing/${sessionId}`}
+            className="flex-1 rounded-xl border border-border bg-card px-5 py-3 text-center text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-accent active:scale-95"
+          >
+            🔍 Review This Session
+          </Link>
+        )}
         <Link
           href="/dashboard/writing"
           className="flex-1 rounded-xl border border-border bg-card px-5 py-3 text-center text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-accent active:scale-95"
