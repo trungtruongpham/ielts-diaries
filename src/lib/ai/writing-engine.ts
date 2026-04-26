@@ -39,7 +39,7 @@ function parseScore(raw: unknown): number {
  */
 export async function generateWritingPrompt(
   taskType: 'task1_academic' | 'task1_gt' | 'task2',
-  options: { promptTypeHint?: string } = {}
+  options: { promptTypeHint?: string; model?: string } = {}
 ): Promise<{ promptText: string; promptType: string; chartData: ChartData | null }> {
   let userPrompt: string
   if (taskType === 'task1_academic') {
@@ -55,7 +55,7 @@ export async function generateWritingPrompt(
       { role: 'system', content: WRITING_EXAMINER_SYSTEM },
       { role: 'user', content: userPrompt },
     ],
-    { json: true, temperature: 0.85, max_tokens: 1200 }
+    { json: true, temperature: 0.85, max_tokens: 1200, ...(options.model ? { model: options.model } : {}) }
   )
 
   const raw = parseJsonResponse<{ prompt_type: string; prompt_text: string; chart_data?: ChartData }>(content)
@@ -84,7 +84,8 @@ export async function evaluateWriting(
   promptText: string,
   promptType: string,
   userAnswer: string,
-  wordCount: number
+  wordCount: number,
+  model?: string
 ): Promise<WritingEvaluation> {
   const { system, user } =
     task === 1
@@ -96,7 +97,7 @@ export async function evaluateWriting(
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    { json: true, temperature: 0.2, max_tokens: 1500 }
+    { json: true, temperature: 0.2, max_tokens: 4000, ...(model ? { model } : {}) }
   )
 
   const raw = parseJsonResponse<Record<string, unknown>>(content)
