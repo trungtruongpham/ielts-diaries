@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   Calculator, LayoutDashboard, LogOut,
-  Menu, X, Target, ClipboardList, Mic, PenLine, BookOpen, ChevronDown,
+  Menu, X, Target, ClipboardList, Mic, PenLine, BookOpen, ChevronDown, StickyNote,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -121,6 +121,18 @@ function UserMenu({ user, onLogout }: { user: User; onLogout: () => void }) {
               Vocabulary
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/notes" className="flex cursor-pointer items-center gap-2">
+              <StickyNote className="h-4 w-4 text-muted-foreground" />
+              My Notes
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/listening" className="flex cursor-pointer items-center gap-2">
+              <Mic className="h-4 w-4 text-muted-foreground" />
+              Listening Practice
+            </Link>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
@@ -171,6 +183,7 @@ export function Header() {
   const practiceLinks = [
     { href: '/speaking', label: 'Speaking', icon: Mic },
     { href: '/writing', label: 'Writing', icon: PenLine },
+    { href: '/listening', label: 'Listening', icon: BookOpen },
   ]
 
   const isPracticeActive = practiceLinks.some(({ href }) => pathname.startsWith(href))
@@ -366,6 +379,14 @@ export function Header() {
                   >
                     <BookOpen className="h-4 w-4" />
                     Vocabulary
+                  </Link>
+                  <Link
+                    href="/dashboard/notes"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
+                  >
+                    <StickyNote className="h-4 w-4" />
+                    My Notes
                   </Link>
                   <button
                     onClick={() => { setMobileOpen(false); handleLogout() }}

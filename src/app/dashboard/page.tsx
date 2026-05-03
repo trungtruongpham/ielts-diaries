@@ -5,6 +5,7 @@ import { getUserTestResults, getRecentTestResults } from '@/lib/db/test-results'
 import { getUserGoal } from '@/lib/db/user-goals'
 import { getRecentSpeakingSessions } from '@/app/dashboard/speaking/actions'
 import { getRecentWritingSessionsAction } from '@/app/dashboard/writing/actions'
+import { getUserListeningAttempts } from '@/lib/db/listening-attempts'
 import { getBandColorClass, getBandDescriptor } from '@/lib/ielts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,11 +31,12 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?redirectTo=/dashboard')
 
-  const [allResults, goal, recentSpeaking, recentWriting] = await Promise.all([
+  const [allResults, goal, recentSpeaking, recentWriting, recentListening] = await Promise.all([
     getUserTestResults(50),      // capped — enough for charts
     getUserGoal(),
     getRecentSpeakingSessions(3),
     getRecentWritingSessionsAction(3),
+    getUserListeningAttempts(3),
   ])
 
   const recentResults = allResults.slice(0, 5)
@@ -330,6 +332,68 @@ export default async function DashboardPage() {
               className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-primary hover:bg-muted/30"
             >
               <Plus className="h-4 w-4" /> New Practice Session
+            </Link>
+          </div>
+        )}
+      </div>
+      {/* ── Listening Practice widget ─────────────────── */}
+      <div className="mt-8 animate-fade-up">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-semibold text-foreground">
+            <Headphones className="h-4 w-4 text-primary" />
+            Listening Practice
+          </h2>
+          <Link href="/listening" className="flex items-center gap-1 text-sm text-primary hover:underline">
+            View all <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        {recentListening.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center">
+            <Headphones className="mb-3 h-8 w-8 text-muted-foreground" />
+            <p className="font-medium">No listening attempts yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Practice with Cambridge IELTS 17–20 tests.</p>
+            <Link
+              href="/listening"
+              className="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <Headphones className="h-4 w-4" />Start Listening
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentListening.map((a) => {
+              const band = a.band
+              const colors = band !== null ? getBandColorClass(band) : null
+              return (
+                <Link
+                  key={a.id}
+                  href={`/listening/results/${a.id}`}
+                  className="flex items-center gap-4 rounded-xl border border-border bg-card px-4 py-3 card-hover"
+                >
+                  <div className={cn('flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border-2', colors?.bg ?? 'bg-muted', colors?.border ?? 'border-border')}>
+                    <Headphones className={cn('h-3 w-3 mb-0.5', colors?.text ?? 'text-muted-foreground')} />
+                    <span className={cn('text-lg font-bold tabular-nums leading-none', colors?.text ?? 'text-muted-foreground')}>
+                      {band != null ? band.toFixed(1) : '—'}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-foreground">
+                      {a.mode === 'strict' ? 'Strict Mode' : 'Practice Mode'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {a.correct_count ?? 0}/40 correct · {format(new Date(a.started_at), 'MMM d, yyyy')}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Link>
+              )
+            })}
+            <Link
+              href="/listening"
+              className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-primary hover:bg-muted/30"
+            >
+              <Plus className="h-4 w-4" /> New Listening Test
             </Link>
           </div>
         )}

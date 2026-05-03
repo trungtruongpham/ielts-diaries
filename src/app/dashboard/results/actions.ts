@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { calculateListeningBand, calculateReadingBand, calculateOverallBand } from '@/lib/ielts'
+import { generateNotesInsights } from '@/app/dashboard/notes/actions'
 import type { TestType } from '@/lib/ielts'
 
 // ── Insert a new test result ──────────────────────────────────────────────────
@@ -69,6 +70,9 @@ export async function createTestResult(formData: FormData) {
 
   if (error) return { error: error.message }
 
+  // Regenerate notes insights in the background (fire-and-forget)
+  generateNotesInsights().catch(console.error)
+
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/results')
   redirect('/dashboard/results')
@@ -113,6 +117,9 @@ export async function updateTestResult(id: string, formData: FormData) {
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }
+
+  // Regenerate notes insights in the background (fire-and-forget)
+  generateNotesInsights().catch(console.error)
 
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/results')

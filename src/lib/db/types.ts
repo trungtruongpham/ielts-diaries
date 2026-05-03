@@ -252,3 +252,157 @@ export interface DbVocabularySettings {
 export type InsertVocabularyWord = Omit<DbVocabularyWord, 'id' | 'created_at' | 'user_id'>
 export type InsertVocabularyCard = Omit<DbVocabularyCard, 'id' | 'user_id'>
 
+// ── Listening Practice types ──────────────────────────────────────────────────
+
+export type ListeningMode = 'strict' | 'practice'
+
+export type ListeningQuestionType =
+  | 'multiple_choice'
+  | 'multiple_select'
+  | 'fill_blank'
+  | 'matching'
+  | 'map_label'
+  | 'table_fill'
+
+// ── question_data shapes (discriminated union by question_type) ──
+
+export interface MultipleChoiceData {
+  type: 'multiple_choice'
+  stem: string
+  options: { key: string; text: string }[]
+}
+
+export interface MultipleSelectData {
+  type: 'multiple_select'
+  stem: string
+  options: { key: string; text: string }[]
+  select_count: number
+}
+
+export interface FillBlankData {
+  type: 'fill_blank'
+  stem: string
+  word_limit: number
+  context?: string
+}
+
+export interface MatchingData {
+  type: 'matching'
+  items: string[]
+  options: { key: string; text: string }[]
+}
+
+export interface MapLabelData {
+  type: 'map_label'
+  image_path: string
+  labels: { id: string; x: number; y: number; options: string[] }[]
+}
+
+export interface TableFillData {
+  type: 'table_fill'
+  table_context: string
+  stem: string
+  word_limit: number
+}
+
+export type ListeningQuestionData =
+  | MultipleChoiceData
+  | MultipleSelectData
+  | FillBlankData
+  | MatchingData
+  | MapLabelData
+  | TableFillData
+
+// ── answer_key shapes ──
+
+export interface MultipleChoiceKey  { answer: string }
+export interface MultipleSelectKey  { answers: string[] }
+export interface FillBlankKey       { acceptable: string[] }
+export interface MatchingKey        { matches: Record<number, string> }
+export interface MapLabelKey        { answers: Record<string, string> }
+export interface TableFillKey       { acceptable: string[] }
+
+export type ListeningAnswerKey =
+  | MultipleChoiceKey
+  | MultipleSelectKey
+  | FillBlankKey
+  | MatchingKey
+  | MapLabelKey
+  | TableFillKey
+
+// ── DB row interfaces ──
+
+export interface DbListeningTest {
+  id: string
+  cam_book: 17 | 18 | 19 | 20
+  test_number: 1 | 2 | 3 | 4
+  title: string
+  test_type: 'academic' | 'general'
+  is_published: boolean
+  created_at: string
+}
+
+export interface DbListeningSection {
+  id: string
+  test_id: string
+  section_number: 1 | 2 | 3 | 4
+  audio_storage_path: string | null
+  duration_seconds: number | null
+  instructions: string | null
+  question_range_start: number
+  question_range_end: number
+  created_at: string
+}
+
+export interface DbListeningQuestion {
+  id: string
+  section_id: string
+  question_number: number
+  question_type: ListeningQuestionType
+  group_id: string | null
+  group_context: { instructions: string; image_path?: string } | null
+  question_data: ListeningQuestionData
+  // answer_key intentionally omitted — fetched server-side only
+  created_at: string
+}
+
+export interface DbListeningQuestionWithKey extends DbListeningQuestion {
+  answer_key: ListeningAnswerKey
+}
+
+export interface DbListeningAttempt {
+  id: string
+  user_id: string
+  test_id: string
+  mode: ListeningMode
+  answers: Record<number, string | string[]>
+  correct_count: number | null
+  score: number | null
+  band: number | null
+  started_at: string
+  completed_at: string | null
+  time_taken_seconds: number | null
+}
+
+export type InsertListeningAttempt = Pick<DbListeningAttempt, 'test_id' | 'mode'>
+export type CompleteListeningAttempt = Pick<
+  DbListeningAttempt,
+  'answers' | 'correct_count' | 'score' | 'band' | 'completed_at' | 'time_taken_seconds'
+>
+
+// ── Notes Insights types ──────────────────────────────────────────────────────
+
+export type IeltsSkill = 'listening' | 'reading' | 'writing' | 'speaking'
+
+export interface DbSkillNoteInsight {
+  id: string
+  user_id: string
+  skill: IeltsSkill
+  summary: string
+  weak_areas: string[]
+  action_items: string[]
+  generated_at: string
+  notes_hash: string
+  notes_analyzed_count: number
+}
+
